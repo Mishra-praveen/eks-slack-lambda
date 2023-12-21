@@ -1,0 +1,16 @@
+##Build and push
+docker build -t eks-control .
+docker tag eks-control:latest <AWS-Account>.dkr.ecr.ap-south-1.amazonaws.com/eks-control:latest
+aws ecr get-login-password --region ap-south-1 --profile devstage | docker login --username AWS --password-stdin <AWS-Account>.dkr.ecr.ap-south-1.amazonaws.com
+docker push <AWS-Account>.dkr.ecr.ap-south-1.amazonaws.com/eks-control:latest
+#Testing locally
+docker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
+    --entrypoint /aws-lambda/aws-lambda-rie \
+    eks-control \
+        /usr/local/bin/python -m awslambdaric lambda_function.lambda_handler
+
+#pass event locally
+curl "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"namespace": "creative-diffusion-playground", "scaledobject_name": "creative-animator-backend-job", "new_min_replica": "0", "action": "get_minreplica", "cluster": "dev"}'
+
+#delete images with none tag
+docker images -a | grep none | awk '{ print $3; }' | xargs docker rmi -f
