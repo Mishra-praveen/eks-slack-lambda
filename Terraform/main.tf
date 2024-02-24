@@ -6,18 +6,18 @@ provider "aws" {
 }
 
 resource "aws_lambda_function" "my_lambda_function" {
-  filename      = "${path.module}/python/aws_lambda.zip"  
+  filename      = "${path.module}/lambda_function/aws_lambda.zip"  
   function_name = "aws_lambda"
   role          = aws_iam_role.lambda_role.arn
   handler       = "aws_lambda.lambda_handler"      
-  runtime       = "python3.9"         
+  runtime       = "python3.11"         
 }
 
 
 data "archive_file" "zip_the_python_code" {
  type        = "zip"
- source_dir  = "${path.module}/python/"
- output_path = "${path.module}/python/aws_lambda.zip"
+ source_dir  = "${path.module}/lambda_function/"
+ output_path = "${path.module}/lambda_function/aws_lambda.zip"
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -63,4 +63,12 @@ resource "aws_iam_role_policy_attachment" "secrets_manager_attachment" {
 resource "aws_iam_role_policy_attachment" "lambda_rds_access_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonRDSFullAccess"
+}
+
+resource "aws_lambda_layer_version" "python311-requests-layer" {
+  filename = "${path.module}/layers/python_requests.zip"
+  layer_name = "python_libraries"
+  source_code_hash = "${filebase64sha256("${path.module}/layers/python_requests.zip")}"
+  compatible_runtimes = ["python3.11"]
+  
 }
